@@ -1088,6 +1088,33 @@
     $('modal-nav-next').disabled = idx >= filtered.length - 1;
   }
 
+  /* ── 手機端：Modal 觸控滑動切換產品 ──
+     左滑 → 下一張、右滑 → 上一張。passive 監聽，不影響規格表垂直滾動。 */
+  function setupSwipeNav() {
+    const modal = $('modal');
+    let startX = 0, startY = 0, startT = 0, active = false;
+
+    modal.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { active = false; return; }
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; startT = Date.now();
+      active = true;
+    }, { passive: true });
+
+    modal.addEventListener('touchend', e => {
+      if (!active || e.changedTouches.length !== 1) return;
+      active = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const dt = Date.now() - startT;
+      if (dt > 600) return;                              // 太慢 → 滾動或猶豫
+      if (Math.abs(dx) < 50) return;                     // 位移不足 → tap
+      if (Math.abs(dx) < Math.abs(dy) * 1.5) return;     // 不夠水平 → 垂直滾動
+      navModal(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  }
+
   /* ── Lightbox ── */
   function openLightbox(src) {
     $('lightbox-img').src = src;
@@ -1168,6 +1195,7 @@
     });
     $('modal-nav-prev').addEventListener('click', () => navModal(-1));
     $('modal-nav-next').addEventListener('click', () => navModal(1));
+    setupSwipeNav();
 
     // Lightbox
     $('lightbox-close').addEventListener('click', closeLightbox);
