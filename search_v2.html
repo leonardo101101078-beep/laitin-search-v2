@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>萊廷照明 — 篩選器原型 v2</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <style>
+    :root {
+      --font-base: 17px;
+      --font-sm: 14px;
+      --font-lg: 20px;
+      --font-xl: 22px;
+      --touch: 48px;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --border: #d8dee7;
+      --text: #1a1a1a;
+      --text-muted: #555;
+      --primary: #1a5fa8;
+      --primary-dark: #134b88;
+      --price: #0a7c30;
+      --tag-bg: #e8f0fb;
+      --tag-text: #1a5fa8;
+      --tag-active-bg: #1a5fa8;
+      --tag-active-text: #fff;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+      --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+      --header-h: 56px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-padding-top: var(--header-h); }
+    body {
+      font-family: "微軟正黑體", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+      font-size: var(--font-base);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-top: var(--header-h);
+    }
+    button, input, select { font: inherit; }
+
+    /* ── Header ── */
+    #site-header {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+      background: var(--primary); color: #fff; z-index: 100;
+      display: flex; align-items: center; padding: 0 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .header-inner {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0;
+    }
+    .header-logo {
+      width: 38px; height: 38px; border-radius: 6px;
+      background: #fff; object-fit: contain; flex: 0 0 auto;
+    }
+    .header-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+    #site-header h1 { font-size: 20px; font-weight: 700; }
+    .header-sub { font-size: 13px; opacity: 0.85; white-space: nowrap; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .proto-tag {
+      background: rgba(255,255,255,0.18); color: #fff;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+    @media (max-width: 480px) { .header-sub { display: none; } }
+
+    /* ── Controls bar ── */
+    .controls-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px 12px; }
+    .controls-inner { max-width: 1200px; margin: 0 auto; }
+    .search-row { margin-bottom: 10px; }
+    .search-wrap { position: relative; max-width: 720px; }
+    #search-input {
+      width: 100%; height: var(--touch); padding: 0 44px 0 16px;
+      font-size: var(--font-base); border: 2px solid var(--border);
+      border-radius: 8px; background: #fff; color: var(--text);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26, 95, 168, 0.12);
+    }
+    #clear-search {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 18px;
+      color: var(--text-muted); width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+    }
+    #clear-search:hover { background: var(--bg); }
+
+    .advanced-toggle {
+      width: 100%; min-height: var(--touch);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 0 14px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: #fff; color: var(--text);
+      cursor: pointer; max-width: 720px;
+    }
+    .advanced-toggle:hover { background: var(--bg); }
+    .advanced-toggle:focus {
+      border-color: var(--primary); outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 95, 168, 0.12);
+    }
+    .toggle-title { font-weight: 700; font-size: var(--font-sm); }
+    .toggle-icon { font-size: 18px; line-height: 1; transition: transform 0.2s; }
+    .advanced-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
+
+    .advanced-panel {
+      margin-top: 10px; padding: 14px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: #fbfcfe;
+    }
+    .advanced-panel[hidden] { display: none; }
+
+    .filter-section { display: flex; flex-direction: column; gap: 10px; }
+    .filter-section + .filter-section {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .filter-section-title {
+      font-size: 12px; font-weight: 800; color: var(--text);
+      letter-spacing: 0.5px;
+    }
+    .section-pink .filter-section-title::before {
+      content: "●"; color: #d65a82; margin-right: 6px;
+    }
+    .section-blue .filter-section-title::before {
+      content: "●"; color: #4d7fc7; margin-right: 6px;
+    }
+    .section-series .filter-section-title::before {
+      content: "①"; color: var(--primary); margin-right: 6px; font-weight: 700;
+    }
+
+    .filter-row {
+      display: grid; grid-template-columns: 1fr;
+      gap: 10px; align-items: start;
+    }
+    @media (min-width: 700px) {
+      .filter-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .filter-field.span-full { grid-column: 1 / -1; }
+    .filter-field label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .filter-select, .filter-input {
+      height: var(--touch); padding: 0 12px;
+      font-size: var(--font-sm); border: 1.5px solid var(--border);
+      border-radius: 8px; background: var(--surface); color: var(--text);
+      width: 100%; max-width: 100%;
+    }
+    .filter-select { cursor: pointer; }
+    .filter-select:focus, .filter-input:focus {
+      border-color: var(--primary); outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 95, 168, 0.12);
+    }
+    .range-pair {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 6px; align-items: center;
+    }
+    .range-separator { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
+
+    .chip-group {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 4px 0;
+    }
+    .chip {
+      display: inline-flex; align-items: center;
+      min-height: 32px; padding: 4px 12px;
+      border: 1.5px solid var(--border); border-radius: 999px;
+      background: var(--surface); color: var(--text);
+      cursor: pointer; font-size: var(--font-sm);
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      user-select: none; white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--primary); }
+    .chip.active {
+      background: var(--tag-active-bg);
+      color: var(--tag-active-text);
+      border-color: var(--tag-active-bg);
+    }
+    .chip-empty { font-size: var(--font-sm); color: var(--text-muted); font-style: italic; }
+
+    .filter-actions {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .result-count { font-size: var(--font-sm); color: var(--text-muted); }
+    #clear-filters {
+      height: var(--touch); padding: 0 16px;
+      font-size: var(--font-sm); border: 1.5px solid var(--border);
+      border-radius: 8px; background: #fff; color: var(--text-muted);
+      cursor: pointer; white-space: nowrap;
+    }
+    #clear-filters:hover { background: var(--bg); color: var(--text); }
+
+    /* ── Grid ── */
+    main { padding: 16px; }
+    .product-grid {
+      display: grid; grid-template-columns: 1fr; gap: 16px;
+    }
+    @media (min-width: 600px) {
+      .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 900px) {
+      .product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 1200px; margin: 0 auto;
+      }
+      main { padding: 24px; }
+    }
+
+    .card {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow: hidden; cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      border: 1.5px solid transparent; min-width: 0;
+    }
+    .card:hover, .card:focus {
+      box-shadow: var(--shadow-hover); transform: translateY(-2px);
+      border-color: var(--primary); outline: none;
+    }
+    .card:active { transform: translateY(0); }
+    .card-img { width: 100%; height: 180px; overflow: hidden; background: var(--bg); }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; padding: 12px; text-align: center;
+      background: #eef2f7; color: #475569;
+    }
+    .placeholder-sku { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+    .placeholder-sub { font-size: 12px; opacity: 0.75; overflow-wrap: anywhere; }
+
+    .card-body {
+      padding: 14px 16px 16px;
+      display: flex; flex-direction: column; gap: 6px; min-width: 0;
+    }
+    .card-sku { font-size: var(--font-sm); color: var(--text-muted); font-weight: 600; overflow-wrap: anywhere; }
+    .card-name { font-size: 18px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+    .card-sub { font-size: var(--font-sm); color: var(--text-muted); overflow-wrap: anywhere; }
+    .card-desc { font-size: var(--font-sm); color: var(--text); overflow-wrap: anywhere; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0; }
+    .card-price { font-size: var(--font-lg); font-weight: 700; color: var(--price); margin-top: 4px; }
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 12px; background: var(--tag-bg); color: var(--tag-text);
+      max-width: 100%; overflow-wrap: anywhere;
+    }
+    .stock-badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 6px;
+      font-size: 12px; font-weight: 700;
+      margin-top: 4px; align-self: flex-start;
+    }
+    .stock-ok { background: #dcfce7; color: #166534; }
+    .stock-low { background: #fef3c7; color: #92400e; }
+    .stock-out { background: #fee2e2; color: #991b1b; }
+
+    .no-result {
+      text-align: center; padding: 60px 16px;
+      color: var(--text-muted);
+    }
+    .no-result p { font-size: 18px; margin-bottom: 16px; }
+    .no-result button {
+      min-height: var(--touch); padding: 12px 24px;
+      font-size: var(--font-base); background: var(--primary);
+      color: #fff; border: none; border-radius: 8px; cursor: pointer;
+    }
+    .no-result button:hover { background: var(--primary-dark); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+      z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+      padding: 0;
+    }
+    .modal-overlay[hidden] { display: none; }
+    @media (min-width: 600px) {
+      .modal-overlay { align-items: center; padding: 24px; }
+    }
+    .modal {
+      background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%; max-height: 90vh; overflow-y: auto;
+      position: relative; padding: 0;
+    }
+    @media (min-width: 600px) {
+      .modal { border-radius: var(--radius); max-width: 680px; max-height: 85vh; }
+    }
+    .modal-close {
+      position: sticky; top: 0; float: right;
+      margin: 12px 12px 0 0; width: 40px; height: 40px;
+      border-radius: 50%; border: none; background: var(--bg);
+      font-size: 18px; cursor: pointer; z-index: 1;
+      display: flex; align-items: center; justify-content: center; color: var(--text);
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-header { padding: 16px 60px 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal-sku { font-size: var(--font-sm); color: var(--text-muted); font-weight: 600; }
+    .modal-name { font-size: 20px; font-weight: 700; margin-top: 2px; line-height: 1.3; overflow-wrap: anywhere; }
+    .modal-sub { font-size: var(--font-sm); color: var(--text-muted); margin-top: 4px; }
+    .modal-gallery { background: #000; }
+    .modal-main-img { width: 100%; height: 280px; object-fit: contain; display: block; }
+    @media (min-width: 600px) { .modal-main-img { height: 360px; } }
+    .modal-specs { padding: 16px 20px; }
+    .specs-table { width: 100%; border-collapse: collapse; font-size: var(--font-base); }
+    .specs-table th {
+      text-align: left; padding: 8px 12px 8px 0;
+      color: var(--text-muted); font-weight: 500;
+      white-space: nowrap; vertical-align: top; width: 110px;
+    }
+    .specs-table td {
+      padding: 8px 0; color: var(--text);
+      border-bottom: 1px solid var(--border);
+      overflow-wrap: anywhere; white-space: pre-wrap;
+    }
+    .modal-notes { padding: 8px 20px 20px; font-size: var(--font-sm); color: var(--text-muted); }
+
+    /* ── Modal nav arrows (desktop) ── */
+    .modal-nav {
+      display: none; width: 44px; height: 44px; flex-shrink: 0;
+      background: rgba(255,255,255,0.88); color: var(--text);
+      border: none; border-radius: 50%; font-size: 22px;
+      cursor: pointer; align-items: center; justify-content: center;
+      box-shadow: var(--shadow);
+    }
+    .modal-nav:hover { background: #fff; }
+    .modal-nav:disabled { opacity: 0.2; cursor: not-allowed; }
+    @media (min-width: 600px) { .modal-nav { display: flex; } }
+
+    /* ── Price reveal ── */
+    .price-reveal-area { padding: 16px 20px; border-top: 2px solid var(--border); }
+    .price-reveal-btn {
+      background: #f0f0f0; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 14px; font-family: inherit;
+      padding: 8px 14px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .price-reveal-btn:hover { background: #e4e4e4; }
+    .price-revealed-wrap { display: none; }
+    .price-revealed {
+      font-size: 24px; font-weight: 700; color: var(--price);
+      animation: priceFadeIn 0.25s ease;
+    }
+    .price-tier-label { font-size: 13px; color: var(--text-muted); font-weight: 400; margin-left: 8px; }
+    @keyframes priceFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ── Lightbox ── */
+    #lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.93);
+      z-index: 300; display: flex; align-items: center; justify-content: center;
+      padding: 20px 60px;
+    }
+    #lightbox[hidden] { display: none; }
+    #lightbox-img { max-width: 100%; max-height: 88vh; object-fit: contain; border-radius: 4px; }
+    .lightbox-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 40px; height: 40px; background: rgba(255,255,255,0.15);
+      color: #fff; border: none; border-radius: 50%;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+  </style>
+</head>
+<body>
+  <header id="site-header">
+    <div class="header-inner">
+      <img class="header-logo" src="assets/logo.png" alt="萊廷照明" onerror="this.style.display='none'">
+      <div class="header-title">
+        <h1>萊廷照明</h1>
+        <span class="header-sub">業務查詢系統</span>
+      </div>
+      <div class="header-right">
+        <span class="proto-tag">篩選器原型 v2</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="controls" class="controls-bar">
+    <div class="controls-inner">
+      <div class="search-row">
+        <div class="search-wrap">
+          <input type="search" id="search-input" placeholder="自由輸入關鍵字、標籤、形容詞、尺寸、價格…" autocomplete="off">
+          <button id="clear-search" type="button" aria-label="清除">✕</button>
+        </div>
+      </div>
+      <button id="advanced-toggle" class="advanced-toggle" type="button" aria-expanded="false" aria-controls="advanced-panel">
+        <span class="toggle-title">進階搜索</span>
+        <span class="toggle-icon" aria-hidden="true">⌄</span>
+      </button>
+      <div id="advanced-panel" class="advanced-panel" hidden>
+        <!-- ① 系列選擇 -->
+        <div class="filter-section section-series">
+          <div class="filter-section-title">第一段：系列</div>
+          <div class="filter-row">
+            <div class="filter-field">
+              <label for="filter-series">系列</label>
+              <select id="filter-series" class="filter-select">
+                <option value="">全部系列</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② 藍色共通篩選 -->
+        <div class="filter-section section-blue">
+          <div class="filter-section-title">共通篩選</div>
+          <div class="filter-row">
+            <div class="filter-field">
+              <label for="filter-main">主標</label>
+              <select id="filter-main" class="filter-select">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="filter-sub">副標</label>
+              <select id="filter-sub" class="filter-select">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label>零售價 (NTD)</label>
+              <div class="range-pair">
+                <input type="number" id="filter-price-min" class="filter-input" placeholder="最低" inputmode="numeric">
+                <span class="range-separator">～</span>
+                <input type="number" id="filter-price-max" class="filter-input" placeholder="最高" inputmode="numeric">
+              </div>
+            </div>
+            <div class="filter-field span-full">
+              <label>標籤（可複選）</label>
+              <div id="filter-tags" class="chip-group"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ③ 粉色系列獨有篩選 -->
+        <div id="pink-section" class="filter-section section-pink" hidden>
+          <div class="filter-section-title">系列獨有屬性</div>
+          <div id="pink-filters"></div>
+        </div>
+
+        <div class="filter-actions">
+          <span id="result-count" class="result-count"></span>
+          <button id="clear-filters" type="button">清除全部篩選</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div id="product-grid" class="product-grid"></div>
+    <div id="no-result" class="no-result" hidden>
+      <p>找不到符合條件的產品</p>
+      <button type="button" id="reset-btn">清除所有篩選</button>
+    </div>
+  </main>
+
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <button id="modal-nav-prev" class="modal-nav" aria-label="上一個">‹</button>
+    <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button id="modal-close" class="modal-close" type="button" aria-label="關閉">✕</button>
+      <div id="modal-content"></div>
+    </div>
+    <button id="modal-nav-next" class="modal-nav" aria-label="下一個">›</button>
+  </div>
+
+  <div id="lightbox" hidden>
+    <button class="lightbox-close" id="lightbox-close" aria-label="關閉">✕</button>
+    <img id="lightbox-img" src="" alt="產品圖片">
+  </div>
+
+  <!-- 內嵌資料源（避免 file:// CORS） -->
+  <script id="products-data" type="application/json">[{"sku":"A-002-001","圖片資料夾":"A-002-001","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"半圓款","簡述":"均勻發光/搭配批土、木作","主型號":"HB128","標籤":["鋁燈槽"],"零售價":9999,"品項名稱":"鋁槽系列001","型號":"HB128","庫存狀態":"○ 庫存充足","型錄頁數":"002","備註":null,"attributes":{"底(mm)":95.5,"高(mm)":72,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-002-002","圖片資料夾":"A-002-002","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"半圓款-配件","簡述":"均勻發光/搭配批土、木作","主型號":"HB128X","標籤":["鋁燈槽"],"零售價":9998,"品項名稱":"鋁槽系列002","型號":"HB128X","庫存狀態":"X  缺貨中","型錄頁數":"002","備註":null,"attributes":{"材質":"不鏽鋼","本體顏色":"金屬灰"}},{"sku":"A-003-001","圖片資料夾":"A-003-001","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"超薄斜角款","簡述":"均勻發光/搭配批土、木作","主型號":"HB381A","標籤":["鋁燈槽"],"零售價":9997,"品項名稱":"鋁槽系列003","型號":"HB381A","庫存狀態":"△ 少量庫存","型錄頁數":"003","備註":null,"attributes":{"底(mm)":75,"高(mm)":30,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-003-002","圖片資料夾":"A-003-002","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"嵌入斜照偏光-A款","簡述":"均勻發光/搭配批土、木作","主型號":"HB011","標籤":["鋁燈槽"],"零售價":9996,"品項名稱":"鋁槽系列004","型號":"HB011","庫存狀態":"○ 庫存充足","型錄頁數":"003","備註":null,"attributes":{"底(mm)":86,"高(mm)":57,"燈槽寬度(mm)":20,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-003-004","圖片資料夾":"A-003-004","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"斜照懸浮-A款","簡述":"均勻發光/搭配批土、木作","主型號":"HB381","標籤":["鋁燈槽"],"零售價":9994,"品項名稱":"鋁槽系列006","型號":"HB381","庫存狀態":"△ 少量庫存","型錄頁數":"003","備註":null,"attributes":{"底(mm)":52,"高(mm)":44,"燈槽寬度(mm)":12,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-004-001","圖片資料夾":"A-004-001","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"嵌入式無邊框偏光款","簡述":"均勻發光/搭配批土、木作","主型號":"HB186","標籤":["鋁燈槽"],"零售價":9992,"品項名稱":"鋁槽系列008","型號":"HB186","庫存狀態":"X  缺貨中","型錄頁數":"004","備註":null,"attributes":{"底(mm)":94,"高(mm)":38,"燈槽寬度(mm)":20,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-004-003","圖片資料夾":"A-004-003","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"防眩弧面引光-A款","簡述":"均勻發光/搭配批土、木作","主型號":"HB139A","標籤":["鋁燈槽"],"零售價":9990,"品項名稱":"鋁槽系列010","型號":"HB139A","庫存狀態":"○ 庫存充足","型錄頁數":"004","備註":null,"attributes":{"底(mm)":97,"高(mm)":19,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-005-001","圖片資料夾":"A-005-001","系列":"鋁線槽系列","主標":"天花造型迴光鋁槽","副標":"極窄弧邊洗牆款","簡述":"均勻發光/搭配批土、木作","主型號":"HB016","標籤":["鋁燈槽"],"零售價":9988,"品項名稱":"鋁槽系列012","型號":"HB016","庫存狀態":"△ 少量庫存","型錄頁數":"004","備註":null,"attributes":{"底(mm)":44,"高(mm)":33,"燈槽寬度(mm)":12,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白"}},{"sku":"A-006-001","圖片資料夾":"A-006-001","系列":"鋁線槽系列","主標":"明裝免木作迴光槽","副標":"油漆批土款","簡述":"不作天花也有間接照明","主型號":"HB198","標籤":["鋁燈槽"],"零售價":9984,"品項名稱":"鋁槽系列016","型號":"HB198","庫存狀態":"○ 庫存充足","型錄頁數":"006","備註":null,"attributes":{"底(mm)":98.7,"高(mm)":58,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白","蓋板顏色":"白"}},{"sku":"A-006-002","圖片資料夾":"A-006-002","系列":"鋁線槽系列","主標":"明裝免木作迴光槽","副標":"雙路發光牆沿款","簡述":"不作天花也有間接照明","主型號":"HG21","標籤":["鋁燈槽"],"零售價":9983,"品項名稱":"鋁槽系列017","型號":"HG21","庫存狀態":"X  缺貨中","型錄頁數":"006","備註":null,"attributes":{"底(mm)":120,"高(mm)":27,"燈槽寬度(mm)":12,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白","蓋板顏色":"白"}},{"sku":"A-007-001","圖片資料夾":"A-007-001","系列":"鋁線槽系列","主標":"明裝免木作迴光槽","副標":"邊角雙向款","簡述":"不作天花也有間接照明","主型號":"CN001","標籤":["鋁燈槽"],"零售價":9981,"品項名稱":"鋁槽系列019","型號":"CN001","庫存狀態":"○ 庫存充足","型錄頁數":"007","備註":null,"attributes":{"底(mm)":69,"高(mm)":69,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白","蓋板顏色":"白"}},{"sku":"A-007-003","圖片資料夾":"A-007-003","系列":"鋁線槽系列","主標":"明裝免木作迴光槽","副標":"向上發光迴光款","簡述":"不作天花也有間接照明","主型號":"HB003","標籤":["鋁燈槽"],"零售價":9979,"品項名稱":"鋁槽系列021","型號":"HB003","庫存狀態":"△ 少量庫存","型錄頁數":"007","備註":null,"attributes":{"底(mm)":50,"高(mm)":37,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白","蓋板顏色":"白"}},{"sku":"A-007-004","圖片資料夾":"A-007-004","系列":"鋁線槽系列","主標":"明裝免木作迴光槽","副標":"牆面腰際線款","簡述":"不作天花也有間接照明","主型號":"HB195A","標籤":["鋁燈槽"],"零售價":9978,"品項名稱":"鋁槽系列022","型號":"HB195A","庫存狀態":"○ 庫存充足","型錄頁數":"007","備註":null,"attributes":{"底(mm)":97,"高(mm)":24,"燈槽寬度(mm)":10,"每段最長(cm)":300,"材質":"鋁","本體顏色":"白","蓋板顏色":"白"}},{"sku":"A-008-001","圖片資料夾":"A-008-001","系列":"鋁線槽系列","主標":"常用鋁燈槽","副標":"鋁燈槽 0809 明裝款","簡述":"無修邊","主型號":"L0809V","標籤":[],"零售價":9977,"品項名稱":"鋁槽系列023","型號":"L0809V","庫存狀態":"X  缺貨中","型錄頁數":"008","備註":null,"attributes":{"有無翅膀邊":"無","底(mm)":8,"高(mm)":9,"面寬(mm)":8,"燈槽寬度(mm)":6,"每段最長(cm)":300,"材質":"鋁","本體顏色":"灰","蓋板顏色":"白"}},{"sku":"A-008-002","圖片資料夾":"A-008-002","系列":"鋁線槽系列","主標":"常用鋁燈槽","副標":"鋁燈槽 0809 嵌入款","簡述":"有修邊","主型號":"L0809S","標籤":[],"零售價":9976,"品項名稱":"鋁槽系列024","型號":"L0809S","庫存狀態":"△ 少量庫存","型錄頁數":"008","備註":null,"attributes":{"有無翅膀邊":"有","底(mm)":8,"高(mm)":9,"面寬(mm)":12,"燈槽寬度(mm)":6,"每段最長(cm)":300,"材質":"鋁","本體顏色":"灰","蓋板顏色":"白"}},{"sku":"D-033-001","圖片資料夾":"D-033-001","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"單排裸版燈帶","簡述":"白光/8mm/普亮","主型號":"DL28141","標籤":["燈帶","24v"],"零售價":9999,"品項名稱":"燈帶系列001","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":12,"光效(lm/w)":100,"剪裁(mm)":10,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":8}},{"sku":"D-033-003","圖片資料夾":"D-033-003","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"單排裸版燈帶","簡述":"黃光/8mm/普亮","主型號":"DL28143","標籤":["燈帶","24v"],"零售價":9997,"品項名稱":"燈帶系列003","型號":"nono-3","庫存狀態":"△ 少量庫存","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":12,"光效(lm/w)":100,"剪裁(mm)":12,"防水等級(IP)":20,"色溫":"黃光","版寬(mm)":8}},{"sku":"D-033-005","圖片資料夾":"D-033-005","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"單排裸版燈帶","簡述":"自然光/5mm/普亮","主型號":null,"標籤":["燈帶","24v"],"零售價":9995,"品項名稱":"燈帶系列005","型號":"nono-3","庫存狀態":"X  缺貨中","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":12,"光效(lm/w)":100,"剪裁(mm)":14,"防水等級(IP)":20,"色溫":"自然光","版寬(mm)":5}},{"sku":"D-033-007","圖片資料夾":"D-033-007","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"雙排裸版燈帶","簡述":"白光/10mm/高亮","主型號":"DL28441","標籤":["燈帶","24v"],"零售價":9993,"品項名稱":"燈帶系列007","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":20,"光效(lm/w)":100,"剪裁(mm)":16,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":10}},{"sku":"D-033-009","圖片資料夾":"D-033-009","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"雙排裸版燈帶","簡述":"黃光/10mm/高亮","主型號":"DL28443","標籤":["燈帶","24v"],"零售價":9991,"品項名稱":"燈帶系列009","型號":"nono-3","庫存狀態":"△ 少量庫存","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":20,"光效(lm/w)":100,"剪裁(mm)":18,"防水等級(IP)":20,"色溫":"黃光","版寬(mm)":10}},{"sku":"D-033-010","圖片資料夾":"D-033-010","系列":"燈帶控制器系列","主標":"24v 低壓燈帶","副標":"COB裸版燈帶","簡述":"白光/8mm/普亮","主型號":"DL28481","標籤":["燈帶","24v","COB"],"零售價":9990,"品項名稱":"燈帶系列010","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":24,"功率(w)":15,"光效(lm/w)":90,"剪裁(mm)":19,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":8}},{"sku":"D-033-013","圖片資料夾":"D-033-013","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"單排裸版燈帶","簡述":"白光/8mm/普亮","主型號":null,"標籤":["燈帶","12v"],"零售價":9987,"品項名稱":"燈帶系列013","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":100,"剪裁(mm)":22,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":8}},{"sku":"D-033-015","圖片資料夾":"D-033-015","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"單排裸版燈帶","簡述":"黃光/8mm/普亮","主型號":null,"標籤":["燈帶","12v"],"零售價":9985,"品項名稱":"燈帶系列015","型號":"nono-3","庫存狀態":"△ 少量庫存","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":100,"剪裁(mm)":24,"防水等級(IP)":20,"色溫":"黃光","版寬(mm)":8}},{"sku":"D-033-026","圖片資料夾":"D-033-026","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"單排裸版燈帶","簡述":"自然光/10mm/高亮","主型號":null,"標籤":["燈帶","12v"],"零售價":9974,"品項名稱":"燈帶系列026","型號":"nono-3","庫存狀態":"X  缺貨中","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":90,"剪裁(mm)":35,"防水等級(IP)":20,"色溫":"自然光","版寬(mm)":10}},{"sku":"D-033-016","圖片資料夾":"D-033-016","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"單排套管燈帶","簡述":"白光/8mm/防水","主型號":null,"標籤":["燈帶","12v","防水"],"零售價":9984,"品項名稱":"燈帶系列016","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":100,"剪裁(mm)":25,"防水等級(IP)":65,"色溫":"白光","版寬(mm)":12}},{"sku":"D-033-018","圖片資料夾":"D-033-018","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"單排套管燈帶","簡述":"黃光/8mm/防水","主型號":null,"標籤":["燈帶","12v","防水"],"零售價":9982,"品項名稱":"燈帶系列018","型號":"nono-3","庫存狀態":"△ 少量庫存","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":100,"剪裁(mm)":27,"防水等級(IP)":65,"色溫":"黃光","版寬(mm)":12}},{"sku":"D-033-019","圖片資料夾":"D-033-019","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"密排裸版燈帶","簡述":"白光/8mm/高亮","主型號":null,"標籤":["燈帶","12v"],"零售價":9981,"品項名稱":"燈帶系列019","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":18,"光效(lm/w)":100,"剪裁(mm)":28,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":8}},{"sku":"D-033-021","圖片資料夾":"D-033-021","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"密排裸版燈帶","簡述":"黃光/8mm/高亮","主型號":null,"標籤":["燈帶","12v"],"零售價":9979,"品項名稱":"燈帶系列021","型號":"nono-3","庫存狀態":"△ 少量庫存","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":18,"光效(lm/w)":100,"剪裁(mm)":30,"防水等級(IP)":20,"色溫":"黃光","版寬(mm)":8}},{"sku":"D-033-022","圖片資料夾":"D-033-022","系列":"燈帶控制器系列","主標":"12v 低壓燈帶","副標":"COB裸版燈帶","簡述":"白光/8mm/普亮","主型號":null,"標籤":["燈帶","12v","COB"],"零售價":9978,"品項名稱":"燈帶系列022","型號":"nono-3","庫存狀態":"○ 庫存充足","型錄頁數":33,"備註":null,"attributes":{"輸入電壓(v)":12,"功率(w)":10,"光效(lm/w)":100,"剪裁(mm)":31,"防水等級(IP)":20,"色溫":"白光","版寬(mm)":8}},{"sku":"N1-001-001","圖片資料夾":"N1-001-001","系列":"輕智能系列","主標":"TinySmart","副標":"E27 燈泡","簡述":"免網路遙控/13w燈泡","主型號":"CBP351","標籤":["輕智能","E27燈泡"],"零售價":9999,"品項名稱":"輕智能系列01","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"E27球泡","燈座":"E27","長(mm)":99,"寬(mm)":100,"高(mm)":101,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":13,"光效(lm/w)":"130~150","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-001-002","圖片資料夾":"N1-001-002","系列":"輕智能系列","主標":"TinySmart","副標":"E27 燈泡","簡述":"免網路遙控/17w燈泡","主型號":"CBP353","標籤":["輕智能","E27燈泡"],"零售價":9998,"品項名稱":"輕智能系列02","型號":null,"庫存狀態":"X  缺貨中","型錄頁數":"N","備註":null,"attributes":{"類型":"E27球泡","燈座":"E27","長(mm)":98,"寬(mm)":99,"高(mm)":100,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":17,"光效(lm/w)":"130~151","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-002-001","圖片資料夾":"N1-002-001","系列":"輕智能系列","主標":"TinySmart","副標":"T5 燈管","簡述":"免網路遙控/T5/一尺","主型號":"CL711","標籤":["輕智能","T5"],"零售價":9997,"品項名稱":"輕智能系列03","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"T5燈管","燈座":"T5 雙孔頭","長(mm)":97,"寬(mm)":98,"高(mm)":99,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":5,"光效(lm/w)":"130~152","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-002-003","圖片資料夾":"N1-002-003","系列":"輕智能系列","主標":"TinySmart","副標":"T5 燈管","簡述":"免網路遙控/T5/三尺","主型號":"CL713","標籤":["輕智能","T5"],"零售價":9995,"品項名稱":"輕智能系列05","型號":null,"庫存狀態":"X  缺貨中","型錄頁數":"N","備註":null,"attributes":{"類型":"T5燈管","燈座":"T5 雙孔頭","長(mm)":95,"寬(mm)":96,"高(mm)":97,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":12,"光效(lm/w)":"130~154","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-003-001","圖片資料夾":"N1-003-001","系列":"輕智能系列","主標":"TinySmart","副標":"T8 燈管","簡述":"免網路遙控/T8/一尺","主型號":"N","標籤":["輕智能","T8"],"零售價":9993,"品項名稱":"輕智能系列07","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"T8燈管","燈座":"T8 雙針","長(mm)":93,"寬(mm)":94,"高(mm)":95,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":5,"光效(lm/w)":"130~156","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-003-003","圖片資料夾":"N1-003-003","系列":"輕智能系列","主標":"TinySmart","副標":"T8 燈管","簡述":"免網路遙控/T8/三尺","主型號":"N","標籤":["輕智能","T8"],"零售價":9991,"品項名稱":"輕智能系列09","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"T8燈管","燈座":"T8 雙針","長(mm)":91,"寬(mm)":92,"高(mm)":93,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":12,"光效(lm/w)":"130~158","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-004-001","圖片資料夾":"N1-004-001","系列":"輕智能系列","主標":"TinySmart","副標":"AR111燈杯","簡述":"免網路遙控/AR111/15w","主型號":"sss","標籤":["輕智能","AR111"],"零售價":9989,"品項名稱":"輕智能系列11","型號":null,"庫存狀態":"X  缺貨中","型錄頁數":"N","備註":null,"attributes":{"類型":"AR111燈杯","燈座":"GU10","長(mm)":89,"寬(mm)":90,"高(mm)":91,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":15,"光效(lm/w)":"130~160","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-004-002","圖片資料夾":"N1-004-002","系列":"輕智能系列","主標":"TinySmart","副標":"AR111燈杯","簡述":"免網路遙控/AR111/20w","主型號":"sss","標籤":["輕智能","AR111"],"零售價":9988,"品項名稱":"輕智能系列12","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"AR111燈杯","燈座":"GU10","長(mm)":88,"寬(mm)":89,"高(mm)":90,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":20,"光效(lm/w)":"130~161","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-005-001","圖片資料夾":"N1-005-001","系列":"輕智能系列","主標":"TinySmart","副標":"經濟款泛光嵌燈","簡述":"常規款/150mm/15w","主型號":"FD 1531-1","標籤":["輕智能","嵌燈"],"零售價":9987,"品項名稱":"輕智能系列13","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":150,"長(mm)":87,"寬(mm)":88,"高(mm)":89,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":15,"光效(lm/w)":"130~162","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-005-004","圖片資料夾":"N1-005-004","系列":"輕智能系列","主標":"TinySmart","副標":"經濟款泛光嵌燈","簡述":"超薄款/155mm/12w","主型號":"CTB 1121-S","標籤":["輕智能","嵌燈"],"零售價":9984,"品項名稱":"輕智能系列16","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":155,"長(mm)":84,"寬(mm)":85,"高(mm)":86,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":12,"光效(lm/w)":"130~165","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-006-001","圖片資料夾":"N1-006-001","系列":"輕智能系列","主標":"TinySmart","副標":"自由開孔泛光嵌燈","簡述":"霧面A款/50~90mm/10w","主型號":"FA 01210 A","標籤":["輕智能","嵌燈"],"零售價":9980,"品項名稱":"輕智能系列20","型號":null,"庫存狀態":"X  缺貨中","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":"50~90","長(mm)":80,"寬(mm)":81,"高(mm)":82,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":10,"光效(lm/w)":"130~169","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-006-005","圖片資料夾":"N1-006-005","系列":"輕智能系列","主標":"TinySmart","副標":"自由開孔泛光嵌燈","簡述":"水晶B款/50~90mm/10w","主型號":"FA 01210 B","標籤":["輕智能","嵌燈"],"零售價":9976,"品項名稱":"輕智能系列24","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":"50~90","長(mm)":76,"寬(mm)":77,"高(mm)":78,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":10,"光效(lm/w)":"130~173","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-007-001","圖片資料夾":"N1-007-001","系列":"輕智能系列","主標":"TinySmart","副標":"轉向天花燈","簡述":"75mm/7w","主型號":"DH 07 WA","標籤":["輕智能","嵌燈"],"零售價":9972,"品項名稱":"輕智能系列28","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":75,"長(mm)":72,"寬(mm)":73,"高(mm)":74,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":7,"光效(lm/w)":"130~177","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-008-001","圖片資料夾":"N1-008-001","系列":"輕智能系列","主標":"TinySmart","副標":"防眩嵌燈 泛光款","簡述":"透鏡A款 75mm/10w","主型號":"FM 6031-10W WA","標籤":["輕智能","嵌燈","防眩"],"零售價":9969,"品項名稱":"輕智能系列31","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":75,"長(mm)":69,"寬(mm)":70,"高(mm)":71,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":10,"光效(lm/w)":"130~180","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-008-007","圖片資料夾":"N1-008-007","系列":"輕智能系列","主標":"TinySmart","副標":"防眩嵌燈 泛光款","簡述":"弧面B款 75mm/10w","主型號":"FM 6031-10W WB","標籤":["輕智能","嵌燈","防眩"],"零售價":9963,"品項名稱":"輕智能系列37","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":75,"長(mm)":63,"寬(mm)":64,"高(mm)":65,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":10,"光效(lm/w)":"130~186","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-009-001","圖片資料夾":"N1-009-001","系列":"輕智能系列","主標":"TinySmart","副標":"防眩嵌燈 射燈款","簡述":"可調角款 55mm/7w/白杯","主型號":"ZVH-7WRX-1","標籤":["輕智能","嵌燈","防眩"],"零售價":9958,"品項名稱":"輕智能系列42","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"嵌燈","燈座":"L/N 接線","開孔尺寸(mm)":55,"長(mm)":58,"寬(mm)":59,"高(mm)":60,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":7,"光效(lm/w)":"130~191","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-010-001","圖片資料夾":"N1-010-001","系列":"輕智能系列","主標":"TinySmart","副標":"軌道燈 射燈款","簡述":"10w/黑殼","主型號":"JF 0511 B","標籤":["輕智能","軌道燈"],"零售價":9955,"品項名稱":"輕智能系列45","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"軌道燈","燈座":"二線式軌道","長(mm)":55,"寬(mm)":56,"高(mm)":57,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":10,"光效(lm/w)":"130~194","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-010-004","圖片資料夾":"N1-010-004","系列":"輕智能系列","主標":"TinySmart","副標":"軌道燈 射燈款","簡述":"20w/白殼","主型號":"JF 0231 W","標籤":["輕智能","軌道燈"],"零售價":9952,"品項名稱":"輕智能系列48","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"軌道燈","燈座":"二線式軌道","長(mm)":52,"寬(mm)":53,"高(mm)":54,"顏色":"黑","輸入電壓(v)":"85~265","功率(w)":20,"光效(lm/w)":"130~197","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-011-001","圖片資料夾":"N1-011-001","系列":"輕智能系列","主標":"TinySmart","副標":"軌道燈 A70款","簡述":"15w/黑殼","主型號":"sss","標籤":["輕智能","軌道燈"],"零售價":9949,"品項名稱":"輕智能系列51","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"軌道燈","燈座":"二線式軌道","長(mm)":49,"寬(mm)":50,"高(mm)":51,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":15,"光效(lm/w)":"130~200","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-012-001","圖片資料夾":"N1-012-001","系列":"輕智能系列","主標":"TinySmart","副標":"軌道燈 圓面泛光款","簡述":"24w/黑殼","主型號":"sss","標籤":["輕智能","軌道燈"],"零售價":9947,"品項名稱":"輕智能系列53","型號":null,"庫存狀態":"X  缺貨中","型錄頁數":"N","備註":null,"attributes":{"類型":"軌道燈","燈座":"二線式軌道","長(mm)":47,"寬(mm)":48,"高(mm)":49,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":24,"光效(lm/w)":"130~202","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-013-001","圖片資料夾":"N1-013-001","系列":"輕智能系列","主標":"TinySmart","副標":"吸頂燈 線條款","簡述":"2尺/15w","主型號":"CL 612","標籤":["輕智能","吸頂燈"],"零售價":9945,"品項名稱":"輕智能系列55","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"吸頂燈","燈座":"L/N 接線","長(mm)":45,"寬(mm)":46,"高(mm)":47,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":15,"光效(lm/w)":"130~204","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-014-001","圖片資料夾":"N1-014-001","系列":"輕智能系列","主標":"TinySmart","副標":"輕鋼架平板燈","簡述":"平面款","主型號":"GT 481","標籤":["輕智能","輕鋼架"],"零售價":9943,"品項名稱":"輕智能系列57","型號":null,"庫存狀態":"△ 少量庫存","型錄頁數":"N","備註":null,"attributes":{"類型":"平板燈","燈座":"L/N 接線","長(mm)":43,"寬(mm)":44,"高(mm)":45,"顏色":"白","輸入電壓(v)":"85~265","功率(w)":28,"光效(lm/w)":"130~206","防水等級(IP)":20,"色溫":"免網路app調色\n開關四段變色"}},{"sku":"N1-015-001","圖片資料夾":"N1-015-001","系列":"輕智能系列","主標":"TinySmart","副標":"24v 智能變壓器","簡述":"24v/100w/遙控調色","主型號":"sss","標籤":["輕智能","變壓器"],"零售價":9942,"品項名稱":"輕智能系列58","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"變壓器","燈座":"L/N 接線","長(mm)":42,"寬(mm)":43,"高(mm)":44,"顏色":"黑","輸入電壓(v)":"85~265","輸出電壓(v)":24,"功率(w)":100}},{"sku":"N1-016-001","圖片資料夾":"N1-016-001","系列":"輕智能系列","主標":"TinySmart","副標":"輕智能遙控器","簡述":"單迴路/白色","主型號":"T01-1","標籤":["輕智能","遙控器"],"零售價":9939,"品項名稱":"輕智能系列61","型號":null,"庫存狀態":"○ 庫存充足","型錄頁數":"N","備註":null,"attributes":{"類型":"遙控器","燈座":"AAA電池"}}]</script>
+
+  <script>
+  /* ────────────────────────────────────────────────────────────
+     篩選器原型 v2
+     依「篩選器原型_實作計劃.md」實作
+     ──────────────────────────────────────────────────────────── */
+
+  const ALL = JSON.parse(document.getElementById('products-data').textContent);
+
+  /* ── 狀態 ── */
+  const state = {
+    q: '',
+    series: '',
+    main: '',
+    sub: '',
+    tags: new Set(),
+    priceMin: '',
+    priceMax: '',
+    attrs: {}   // { key: Set(...) | { min, max } }
+  };
+
+  let filtered = [];
+  let currentModalSku = null;
+  let savedScrollY = 0;
+
+  /* ── 工具 ── */
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+  ));
+  const RANGE_RE = /^(\d+(?:\.\d+)?)~(\d+(?:\.\d+)?)$/;
+
+  function parseRange(s) {
+    const m = String(s).match(RANGE_RE);
+    return m ? [Number(m[1]), Number(m[2])] : null;
+  }
+
+  function isNumeric(v) {
+    return typeof v === 'number' && Number.isFinite(v);
+  }
+
+  function uniq(arr) { return [...new Set(arr)]; }
+
+  /* ── 系列/主標/副標選項 ── */
+  function getSeries() {
+    return uniq(ALL.map(p => p.系列).filter(Boolean)).sort();
+  }
+  function getMains(series) {
+    return uniq(
+      ALL.filter(p => !series || p.系列 === series).map(p => p.主標).filter(Boolean)
+    ).sort();
+  }
+  function getSubs(series, main) {
+    return uniq(
+      ALL
+        .filter(p => (!series || p.系列 === series) && (!main || p.主標 === main))
+        .map(p => p.副標).filter(Boolean)
+    ).sort();
+  }
+
+  /* ── 標籤池（藍色共通） ── */
+  function getAllTags() {
+    const pool = new Set();
+    ALL.forEach(p => (p.標籤 || []).forEach(t => pool.add(t)));
+    return [...pool].sort();
+  }
+
+  /* ── 粉色 attribute schema（§6.3） ── */
+  function buildAttrSchemas(series) {
+    if (!series) return [];
+    const list = ALL.filter(p => p.系列 === series);
+    const keys = new Set();
+    list.forEach(p => Object.keys(p.attributes || {}).forEach(k => keys.add(k)));
+
+    const schemas = [];
+    keys.forEach(key => {
+      const raw = list.map(p => p.attributes?.[key]).filter(v => v != null && v !== '');
+      const distinctStr = uniq(raw.map(v => String(v)));
+      if (distinctStr.length < 2) return;   // §6.3 動態顯示規則
+
+      if (raw.every(isNumeric)) {
+        schemas.push({
+          key, type: 'numeric_range',
+          min: Math.min(...raw),
+          max: Math.max(...raw)
+        });
+      } else if (raw.some(v => typeof v === 'string' && v.includes(','))) {
+        const tags = new Set();
+        raw.forEach(v => String(v).split(',').forEach(t => {
+          const x = t.trim();
+          if (x) tags.add(x);
+        }));
+        schemas.push({ key, type: 'multi_value_tag', options: [...tags].sort() });
+      } else {
+        schemas.push({ key, type: 'discrete_text', options: distinctStr.sort() });
+      }
+    });
+    // 數值範圍排在前
+    schemas.sort((a, b) => (a.type === b.type ? 0 : a.type === 'numeric_range' ? -1 : 1));
+    return schemas;
+  }
+
+  /* ── 過濾：一般搜索 (§3.2 + §3.3) ── */
+  function matchGeneral(p) {
+    const q = state.q.trim().toLowerCase();
+    if (!q) return true;
+
+    // §3.3 數值範圍命中
+    const qNum = Number(q);
+    if (Number.isFinite(qNum) && q !== '') {
+      // 零售價精確
+      if (p.零售價 === qNum) return true;
+      // attributes 數值或範圍字串
+      for (const v of Object.values(p.attributes || {})) {
+        if (isNumeric(v) && v === qNum) return true;
+        if (typeof v === 'string') {
+          const r = parseRange(v);
+          if (r && qNum >= r[0] && qNum <= r[1]) return true;
+        }
+      }
+    }
+
+    const hay = [
+      p.主型號, p.品項名稱, p.型號, p.簡述, p.副標,
+      ...(p.標籤 || [])
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  }
+
+  /* ── 過濾：進階搜索 (§4 + §5) ── */
+  function matchAdvanced(p) {
+    if (state.series && p.系列 !== state.series) return false;
+    if (state.main   && p.主標 !== state.main)   return false;
+    if (state.sub    && p.副標 !== state.sub)    return false;
+
+    if (state.tags.size) {
+      const t = p.標籤 || [];
+      if (!t.some(x => state.tags.has(x))) return false;  // OR within
+    }
+
+    const price = p.零售價;
+    if (state.priceMin !== '') {
+      if (price == null || price < Number(state.priceMin)) return false;
+    }
+    if (state.priceMax !== '') {
+      if (price == null || price > Number(state.priceMax)) return false;
+    }
+
+    for (const [k, f] of Object.entries(state.attrs)) {
+      const v = p.attributes?.[k];
+      if (f instanceof Set) {
+        if (f.size === 0) continue;
+        if (v == null) return false;   // §5.3 空值排除
+        const items = typeof v === 'string' && v.includes(',')
+          ? v.split(',').map(s => s.trim())
+          : [String(v)];
+        if (!items.some(item => f.has(item))) return false;
+      } else if (f && typeof f === 'object') {
+        const n = isNumeric(v) ? v : Number(v);
+        if (!Number.isFinite(n)) return false;
+        if (f.min !== '' && n < Number(f.min)) return false;
+        if (f.max !== '' && n > Number(f.max)) return false;
+      }
+    }
+    return true;
+  }
+
+  function runFilter() {
+    filtered = ALL.filter(p => matchGeneral(p) && matchAdvanced(p));
+    $('result-count').textContent = `共 ${filtered.length} 項產品`;
+    renderGrid();
+  }
+
+  /* ── 渲染：選單與 chips ── */
+  function populateSelect(sel, options, placeholder) {
+    sel.innerHTML = `<option value="">${esc(placeholder)}</option>` +
+      options.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  }
+
+  function renderTagChips() {
+    const box = $('filter-tags');
+    const tags = getAllTags();
+    if (tags.length === 0) {
+      box.innerHTML = '<span class="chip-empty">（無標籤資料）</span>';
+      return;
+    }
+    box.innerHTML = tags.map(t =>
+      `<span class="chip${state.tags.has(t) ? ' active' : ''}" data-tag="${esc(t)}">${esc(t)}</span>`
+    ).join('');
+    box.querySelectorAll('.chip').forEach(el => {
+      el.addEventListener('click', () => {
+        const t = el.dataset.tag;
+        if (state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
+        el.classList.toggle('active');
+        runFilter();
+      });
+    });
+  }
+
+  function renderPinkFilters() {
+    const wrap = $('pink-section');
+    const inner = $('pink-filters');
+    state.attrs = {};
+    if (!state.series) {
+      wrap.hidden = true;
+      inner.innerHTML = '';
+      return;
+    }
+    const schemas = buildAttrSchemas(state.series);
+    if (schemas.length === 0) {
+      wrap.hidden = true;
+      inner.innerHTML = '';
+      return;
+    }
+    wrap.hidden = false;
+
+    inner.innerHTML = `<div class="filter-row">${schemas.map(s => {
+      const safeId = `attr-${btoa(unescape(encodeURIComponent(s.key))).replace(/=/g,'')}`;
+      if (s.type === 'numeric_range') {
+        state.attrs[s.key] = { min: '', max: '' };
+        return `<div class="filter-field">
+          <label>${esc(s.key)} <span style="font-weight:400;color:#888">(${s.min}–${s.max})</span></label>
+          <div class="range-pair">
+            <input type="number" class="filter-input attr-range-min" data-key="${esc(s.key)}" placeholder="最低" inputmode="decimal">
+            <span class="range-separator">～</span>
+            <input type="number" class="filter-input attr-range-max" data-key="${esc(s.key)}" placeholder="最高" inputmode="decimal">
+          </div>
+        </div>`;
+      }
+      // chips (discrete_text or multi_value_tag)
+      state.attrs[s.key] = new Set();
+      const tagLabel = s.type === 'multi_value_tag' ? '（多選）' : '';
+      return `<div class="filter-field span-full">
+        <label>${esc(s.key)} ${tagLabel}</label>
+        <div class="chip-group" data-key="${esc(s.key)}">
+          ${s.options.map(o =>
+            `<span class="chip" data-val="${esc(o)}">${esc(o)}</span>`
+          ).join('')}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+
+    // 綁定事件
+    inner.querySelectorAll('.attr-range-min').forEach(el => {
+      el.addEventListener('input', e => {
+        state.attrs[e.target.dataset.key].min = e.target.value;
+        runFilter();
+      });
+    });
+    inner.querySelectorAll('.attr-range-max').forEach(el => {
+      el.addEventListener('input', e => {
+        state.attrs[e.target.dataset.key].max = e.target.value;
+        runFilter();
+      });
+    });
+    inner.querySelectorAll('.chip-group').forEach(group => {
+      const key = group.dataset.key;
+      group.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const v = chip.dataset.val;
+          const set = state.attrs[key];
+          if (set.has(v)) set.delete(v); else set.add(v);
+          chip.classList.toggle('active');
+          runFilter();
+        });
+      });
+    });
+  }
+
+  /* ── 連動 ── */
+  function refreshMainSubOptions() {
+    populateSelect($('filter-main'), getMains(state.series), '全部');
+    populateSelect($('filter-sub'),  getSubs(state.series, state.main), '全部');
+    $('filter-main').value = state.main;
+    $('filter-sub').value = state.sub;
+  }
+
+  function onSeriesChange(value) {
+    state.series = value;
+    state.main = '';
+    state.sub = '';
+    refreshMainSubOptions();
+    renderPinkFilters();
+    runFilter();
+  }
+  function onMainChange(value) {
+    state.main = value;
+    state.sub = '';
+    populateSelect($('filter-sub'), getSubs(state.series, state.main), '全部');
+    runFilter();
+  }
+  function onSubChange(value) {
+    state.sub = value;
+    runFilter();
+  }
+
+  /* ── 卡片渲染 ── */
+  function placeholder(p) {
+    return `<div class="img-placeholder">
+      <span class="placeholder-sku">${esc(p.sku)}</span>
+      <span class="placeholder-sub">${esc(p.副標 || '')}</span>
+    </div>`;
+  }
+
+  function imgSrc(p) {
+    if (!p.圖片資料夾) return null;
+    return `產品圖庫/${p.圖片資料夾}/001.png`;
+  }
+
+  function renderImg(p) {
+    const src = imgSrc(p);
+    if (!src) return placeholder(p);
+    return `<img src="${esc(src)}" alt="${esc(p.主標 || p.sku)}" loading="lazy"
+      onerror="this.parentElement.innerHTML=window.getPlaceholder('${esc(p.sku)}')">`;
+  }
+  window.getPlaceholder = (sku) => {
+    const p = ALL.find(x => x.sku === sku);
+    return p ? placeholder(p) : '';
+  };
+
+  function stockClass(s) {
+    if (!s) return '';
+    if (s.startsWith('○')) return 'stock-ok';
+    if (s.startsWith('△')) return 'stock-low';
+    if (s.startsWith('X')) return 'stock-out';
+    return '';
+  }
+
+  function fmtPrice(n) {
+    return n == null ? '' : `NT$${Number(n).toLocaleString()}`;
+  }
+
+  function renderCard(p) {
+    const tags = (p.標籤 || []).slice(0, 3).map(t =>
+      `<span class="tag">${esc(t)}</span>`
+    ).join('');
+    const sc = stockClass(p.庫存狀態);
+    return `<article class="card" tabindex="0" data-sku="${esc(p.sku)}" role="button"
+        aria-label="${esc(`${p.sku} ${p.主標 || ''}`)}">
+      <div class="card-img">${renderImg(p)}</div>
+      <div class="card-body">
+        <div class="card-sku">${esc(p.sku)} · ${esc(p.主型號 || '—')}</div>
+        <div class="card-name">${esc(p.主標 || '')}</div>
+        <div class="card-sub">${esc(p.副標 || '')}</div>
+        ${p.簡述 ? `<div class="card-desc">${esc(p.簡述)}</div>` : ''}
+        ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+        ${p.庫存狀態 ? `<span class="stock-badge ${sc}">${esc(p.庫存狀態.trim())}</span>` : ''}
+        ${p.零售價 != null ? `<div class="card-price">${esc(fmtPrice(p.零售價))}</div>` : ''}
+      </div>
+    </article>`;
+  }
+
+  function renderGrid() {
+    const grid = $('product-grid');
+    const empty = $('no-result');
+    if (filtered.length === 0) {
+      grid.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    grid.innerHTML = filtered.map(renderCard).join('');
+  }
+
+  /* ── Modal ── */
+  function openModal(sku) {
+    const p = ALL.find(x => x.sku === sku);
+    if (!p) return;
+    currentModalSku = sku;
+    savedScrollY = window.scrollY;
+
+    const src = imgSrc(p);
+    const galleryHTML = src ? `
+      <div class="modal-gallery">
+        <img id="modal-main-img" class="modal-main-img"
+             style="cursor:zoom-in" src="${esc(src)}"
+             alt="${esc(p.主標 || p.sku)}"
+             onerror="this.outerHTML=window.getPlaceholder('${esc(p.sku)}')">
+      </div>` : '';
+
+    function row(label, value) {
+      if (value == null || value === '') return '';
+      return `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`;
+    }
+    function rowList(label, list) {
+      if (!list || list.length === 0) return '';
+      return `<tr><th>${esc(label)}</th><td>${list.map(esc).join('、')}</td></tr>`;
+    }
+
+    const attrRows = Object.entries(p.attributes || {})
+      .map(([k, v]) => row(k, v))
+      .join('');
+
+    // 零售價：§F-05 預設隱藏，點擊才顯示，關閉 Modal 後自動重置（重開時又是隱藏）
+    const priceHTML = p.零售價 != null ? `
+      <div class="price-reveal-area">
+        <button class="price-reveal-btn" id="price-reveal-btn">🔒 點擊查看零售價</button>
+        <div class="price-revealed-wrap" id="price-revealed-wrap">
+          <span class="price-revealed">${esc(fmtPrice(p.零售價))}</span>
+          <span class="price-tier-label">（零售價）</span>
+        </div>
+      </div>` : '';
+
+    const notesHTML = p.備註 ? `<div class="modal-notes">備註：${esc(p.備註)}</div>` : '';
+
+    $('modal-content').innerHTML = `
+      <div class="modal-header">
+        <div class="modal-sku">${esc(p.sku)}　${esc(p.主型號 || '')}</div>
+        <div id="modal-title" class="modal-name">${esc(p.主標 || '')}</div>
+        <div class="modal-sub">${esc(p.副標 || '')}　·　${esc(p.系列 || '')}</div>
+      </div>
+      ${galleryHTML}
+      <div class="modal-specs">
+        <table class="specs-table">
+          ${row('簡述', p.簡述)}
+          ${row('品項名稱', p.品項名稱)}
+          ${row('型號', p.型號)}
+          ${rowList('標籤', p.標籤)}
+          ${row('庫存狀態', p.庫存狀態)}
+          ${row('型錄頁', p.型錄頁數)}
+          ${attrRows}
+        </table>
+      </div>
+      ${priceHTML}
+      ${notesHTML}`;
+
+    // Lightbox 觸發
+    const mainImg = $('modal-main-img');
+    if (mainImg && src) {
+      mainImg.addEventListener('click', () => openLightbox(src));
+    }
+
+    // Price reveal
+    const revealBtn = $('price-reveal-btn');
+    if (revealBtn) {
+      revealBtn.addEventListener('click', () => {
+        revealBtn.style.display = 'none';
+        $('price-revealed-wrap').style.display = 'block';
+      });
+    }
+
+    $('modal-overlay').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('modal-close').focus();
+    updateModalNavBtns();
+  }
+
+  function closeModal() {
+    $('modal-overlay').hidden = true;
+    document.body.style.overflow = '';
+    window.scrollTo(0, savedScrollY);
+    currentModalSku = null;
+  }
+
+  function navModal(dir) {
+    if (!currentModalSku) return;
+    const idx = filtered.findIndex(p => p.sku === currentModalSku);
+    const next = idx + dir;
+    if (next < 0 || next >= filtered.length) return;
+    openModal(filtered[next].sku);
+  }
+
+  function updateModalNavBtns() {
+    if (!currentModalSku) return;
+    const idx = filtered.findIndex(p => p.sku === currentModalSku);
+    $('modal-nav-prev').disabled = idx <= 0;
+    $('modal-nav-next').disabled = idx >= filtered.length - 1;
+  }
+
+  /* ── Lightbox ── */
+  function openLightbox(src) {
+    $('lightbox-img').src = src;
+    $('lightbox').hidden = false;
+  }
+  function closeLightbox() { $('lightbox').hidden = true; }
+
+  /* ── 清除全部篩選 ── */
+  function clearAll() {
+    state.q = '';
+    state.series = '';
+    state.main = '';
+    state.sub = '';
+    state.tags = new Set();
+    state.priceMin = '';
+    state.priceMax = '';
+    state.attrs = {};
+
+    $('search-input').value = '';
+    $('filter-series').value = '';
+    $('filter-price-min').value = '';
+    $('filter-price-max').value = '';
+
+    refreshMainSubOptions();
+    renderTagChips();
+    renderPinkFilters();
+    runFilter();
+  }
+
+  /* ── 初始化 ── */
+  function init() {
+    populateSelect($('filter-series'), getSeries(), '全部系列');
+    refreshMainSubOptions();
+    renderTagChips();
+    renderPinkFilters();
+
+    // 事件
+    $('search-input').addEventListener('input', e => {
+      state.q = e.target.value;
+      runFilter();
+    });
+    $('clear-search').addEventListener('click', () => {
+      $('search-input').value = '';
+      state.q = '';
+      runFilter();
+      $('search-input').focus();
+    });
+
+    $('advanced-toggle').addEventListener('click', e => {
+      const expanded = e.currentTarget.getAttribute('aria-expanded') === 'true';
+      e.currentTarget.setAttribute('aria-expanded', String(!expanded));
+      $('advanced-panel').hidden = expanded;
+    });
+
+    $('filter-series').addEventListener('change', e => onSeriesChange(e.target.value));
+    $('filter-main').addEventListener('change', e => onMainChange(e.target.value));
+    $('filter-sub').addEventListener('change', e => onSubChange(e.target.value));
+    $('filter-price-min').addEventListener('input', e => { state.priceMin = e.target.value; runFilter(); });
+    $('filter-price-max').addEventListener('input', e => { state.priceMax = e.target.value; runFilter(); });
+
+    $('clear-filters').addEventListener('click', clearAll);
+    $('reset-btn').addEventListener('click', clearAll);
+
+    // Modal
+    $('product-grid').addEventListener('click', e => {
+      const card = e.target.closest('.card');
+      if (card) openModal(card.dataset.sku);
+    });
+    $('product-grid').addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const card = e.target.closest('.card');
+        if (card) { e.preventDefault(); openModal(card.dataset.sku); }
+      }
+    });
+    $('modal-close').addEventListener('click', closeModal);
+    $('modal-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+    $('modal-nav-prev').addEventListener('click', () => navModal(-1));
+    $('modal-nav-next').addEventListener('click', () => navModal(1));
+
+    // Lightbox
+    $('lightbox-close').addEventListener('click', closeLightbox);
+    $('lightbox').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeLightbox();
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      const lbOpen = !$('lightbox').hidden;
+      const modalOpen = !$('modal-overlay').hidden;
+      if (e.key === 'Escape') {
+        if (lbOpen) return closeLightbox();
+        if (modalOpen) return closeModal();
+      }
+      if (lbOpen) return;
+      if (modalOpen) {
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); navModal(-1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); navModal(1);  }
+      }
+    });
+
+    runFilter();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

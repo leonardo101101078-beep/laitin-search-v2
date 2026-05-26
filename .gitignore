@@ -1,0 +1,14 @@
+# 白名單模式：預設排除所有檔案，只允許列出的項目進入 repo。
+# 防止內部定價（XLSX）、客戶工程圖（PDF）、PRD、CLAUDE.md 等敏感資料外洩。
+
+*
+!.gitignore
+!README.md
+!index.html
+!search_v2.html
+!產品圖庫
+!產品圖庫/**
+
+# 永遠排除的 OS / 編輯器垃圾
+.DS_Store
+~$*
