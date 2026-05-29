@@ -77,14 +77,17 @@
     .header-icon-btn:hover, .header-icon-btn[aria-expanded="true"] { background: rgba(255,255,255,0.32); }
     @media (max-width: 480px) { .header-sub { display: none; } .proto-tag { display: none; } }
 
-    /* v0.4 M8：header 縮放搜索列（隨時呼叫，不必捲到頂） */
+    /* v0.4 M8 / v0.5：header 搜索面板（一般 + 進階，可捲動） */
     .header-search {
       position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 99;
       background: var(--surface); border-bottom: 1px solid var(--border);
       box-shadow: var(--shadow); padding: 10px 16px;
+      max-height: calc(100vh - var(--header-h)); overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .header-search[hidden] { display: none; }
-    .header-search-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 8px; align-items: center; }
+    .header-search-box { max-width: 1200px; margin: 0 auto; }
+    .header-search-inner { display: flex; gap: 8px; align-items: center; }
     .header-search-inner input {
       flex: 1 1 auto; min-width: 0; height: var(--touch);
       padding: 0 14px; border: 2px solid var(--primary); border-radius: var(--radius);
@@ -171,6 +174,8 @@
     .advanced-panel[hidden] { display: none; }
 
     .filter-section { display: flex; flex-direction: column; gap: 10px; }
+    /* v0.5：讓 [hidden] 對 flex 元素生效（覆蓋 .filter-section / .filter-field 的 display） */
+    .filter-section[hidden], .filter-field[hidden] { display: none; }
     .filter-section + .filter-section {
       margin-top: 14px; padding-top: 14px;
       border-top: 1px dashed var(--border);
@@ -574,32 +579,14 @@
     </div>
   </header>
 
-  <!-- v0.4 M8：縮放搜索列（header 內隨時呼叫） -->
+  <!-- v0.4 M8 / v0.5 回饋2：header 🔍 面板＝一般搜索 + 進階搜索（單一來源） -->
   <div id="header-search" class="header-search" hidden>
-    <div class="header-search-inner">
-      <input type="search" id="header-search-input" placeholder="搜索產品（料號、品名、標籤、尺寸、價格…）" autocomplete="off">
-      <button id="header-search-close" type="button" aria-label="關閉搜索">✕</button>
-    </div>
-  </div>
-
-  <!-- v0.4 M8：總功能選單（功能殼，多數即將上線） -->
-  <nav id="main-menu" class="main-menu" hidden aria-label="總功能選單">
-    <button class="menu-item" type="button" data-soon>👤 帳戶管理<span class="soon">即將上線</span></button>
-    <button class="menu-item" type="button" data-soon>⭐ 收藏夾<span class="soon">即將上線</span></button>
-    <button class="menu-item" type="button" data-soon>📝 製作報價單<span class="soon">即將上線</span></button>
-    <button class="menu-item" type="button" data-soon>📢 優惠公告說明<span class="soon">即將上線</span></button>
-    <button class="menu-item" type="button" data-soon>⋯ 其他功能<span class="soon">即將上線</span></button>
-    <div class="menu-footer" id="menu-update-time">資料更新時間：—</div>
-  </nav>
-
-  <div id="controls" class="controls-bar">
-    <div class="controls-inner">
-      <div class="search-row">
-        <div class="search-wrap">
-          <input type="search" id="search-input" placeholder="自由輸入關鍵字、標籤、形容詞、尺寸、價格…" autocomplete="off">
-          <button id="clear-search" type="button" aria-label="清除">✕</button>
-        </div>
+    <div class="header-search-box">
+      <div class="header-search-inner">
+        <input type="search" id="header-search-input" placeholder="搜索產品（料號、品名、標籤、尺寸、價格…）" autocomplete="off">
+        <button id="header-search-close" type="button" aria-label="關閉搜索">✕</button>
       </div>
+
       <button id="advanced-toggle" class="advanced-toggle" type="button" aria-expanded="false" aria-controls="advanced-panel">
         <span class="toggle-title">進階搜索</span>
         <span class="toggle-icon" aria-hidden="true">⌄</span>
@@ -642,14 +629,15 @@
                 <input type="number" id="filter-price-max" class="filter-input" placeholder="最高" inputmode="numeric">
               </div>
             </div>
-            <div class="filter-field span-full">
+            <!-- v0.5 回饋1：全部系列時，標籤留在共通區（顯示全部標籤）；選了系列則隱藏、改在系列獨有屬性區 -->
+            <div class="filter-field span-full" id="tags-field-common">
               <label>標籤（可複選）</label>
               <div id="filter-tags" class="chip-group"></div>
             </div>
           </div>
         </div>
 
-        <!-- ③ 粉色系列獨有篩選 -->
+        <!-- ③ 粉色系列獨有篩選（含系列標籤下拉 — v0.5 回饋1） -->
         <div id="pink-section" class="filter-section section-pink" hidden>
           <div class="filter-section-title">系列獨有屬性</div>
           <div id="pink-filters"></div>
@@ -662,6 +650,16 @@
       </div>
     </div>
   </div>
+
+  <!-- v0.4 M8：總功能選單（功能殼，多數即將上線） -->
+  <nav id="main-menu" class="main-menu" hidden aria-label="總功能選單">
+    <button class="menu-item" type="button" data-soon>👤 帳戶管理<span class="soon">即將上線</span></button>
+    <button class="menu-item" type="button" data-soon>⭐ 收藏夾<span class="soon">即將上線</span></button>
+    <button class="menu-item" type="button" data-soon>📝 製作報價單<span class="soon">即將上線</span></button>
+    <button class="menu-item" type="button" data-soon>📢 優惠公告說明<span class="soon">即將上線</span></button>
+    <button class="menu-item" type="button" data-soon>⋯ 其他功能<span class="soon">即將上線</span></button>
+    <div class="menu-footer" id="menu-update-time">資料更新時間：—</div>
+  </nav>
 
   <main>
     <div id="product-grid" class="product-grid"></div>
@@ -971,10 +969,9 @@
     return div;
   }
 
-  function renderTagDropdown() {
-    const box = $('filter-tags');
+  /* 共用：把標籤多選下拉建到指定容器（AND 語意） */
+  function buildTagDropdownInto(box, tags) {
     box.innerHTML = '';
-    const tags = getTags(state.series);   // v0.4 M2：標籤隨系列連動
     if (tags.length === 0) {
       box.innerHTML = '<span class="chip-empty">（無標籤資料）</span>';
       return;
@@ -990,15 +987,46 @@
     box.appendChild(dd);
   }
 
+  /* 共通區標籤（第一段）：僅「全部系列」時顯示全部標籤。
+     選了具體系列 → 隱藏此處，改在「系列獨有屬性」區顯示該系列標籤（見 renderPinkFilters）。v0.5 回饋1 */
+  function renderTagDropdown() {
+    const field = $('tags-field-common');
+    if (state.series) {
+      field.hidden = true;
+      $('filter-tags').innerHTML = '';
+      return;
+    }
+    field.hidden = false;
+    buildTagDropdownInto($('filter-tags'), getTags(''));
+  }
+
   function renderPinkFilters() {
     const wrap  = $('pink-section');
     const inner = $('pink-filters');
     state.attrs = {};
     inner.innerHTML = '';
     if (!state.series) { wrap.hidden = true; return; }
+
+    const seriesTags = getTags(state.series);
     const schemas = buildAttrSchemas(state.series);
-    if (schemas.length === 0) { wrap.hidden = true; return; }
+    if (seriesTags.length === 0 && schemas.length === 0) { wrap.hidden = true; return; }
     wrap.hidden = false;
+
+    // v0.5 回饋1：系列標籤下拉置於「系列獨有屬性」最上方
+    if (seriesTags.length) {
+      const tagField = document.createElement('div');
+      tagField.className = 'filter-field span-full';
+      const tagLabel = document.createElement('label');
+      tagLabel.textContent = '標籤（可複選）';
+      tagField.appendChild(tagLabel);
+      const tagBox = document.createElement('div');
+      tagBox.className = 'chip-group';
+      tagField.appendChild(tagBox);
+      inner.appendChild(tagField);
+      buildTagDropdownInto(tagBox, seriesTags);
+    }
+
+    if (schemas.length === 0) return;
 
     const row = document.createElement('div');
     row.className = 'filter-row';
@@ -1374,8 +1402,7 @@
     state.priceMax = '';
     state.attrs = {};
 
-    $('search-input').value = '';
-    $('header-search-input').value = '';   // v0.4 M8：同步清空 header 搜索欄
+    $('header-search-input').value = '';
     $('filter-series').value = '';
     $('filter-price-min').value = '';
     $('filter-price-max').value = '';
@@ -1386,10 +1413,9 @@
     runFilter();
   }
 
-  /* ── v0.4 M8：搜索同步（主搜索欄 ↔ header 縮放搜索欄） ── */
+  /* ── v0.5：搜索輸入（唯一來源 = header 搜索欄） ── */
   function setQuery(v) {
     state.q = v;
-    if ($('search-input').value !== v) $('search-input').value = v;
     if ($('header-search-input').value !== v) $('header-search-input').value = v;
     runFilter();
   }
@@ -1426,14 +1452,7 @@
     renderTagDropdown();
     renderPinkFilters();
 
-    // 事件
-    $('search-input').addEventListener('input', e => setQuery(e.target.value));
-    $('clear-search').addEventListener('click', () => {
-      setQuery('');
-      $('search-input').focus();
-    });
-
-    // v0.4 M8：header 縮放搜索 + 功能選單
+    // 事件 — v0.5：搜索唯一入口 = header 🔍 面板（一般 + 進階）
     $('header-search-input').addEventListener('input', e => setQuery(e.target.value));
     $('header-search-btn').addEventListener('click', e => { e.stopPropagation(); toggleHeaderSearch(); });
     $('header-search-close').addEventListener('click', closeHeaderPanels);
