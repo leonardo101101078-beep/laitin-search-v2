@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系統設計說明 — 萊廷照明 內部業務查詢系統</title>
+<style>
+  :root{
+    --primary:#1a5fa8; --primary-dark:#134b88; --primary-light:#e8f0fb;
+    --ink:#1f2937; --muted:#5b6776; --line:#e3e8ef; --bg:#f5f7fa; --surface:#fff;
+    --blue:#1a5fa8; --pink:#d6336c; --pink-bg:#fff0f5; --red:#c0341d; --red-bg:#fdf0ed;
+    --green:#0a7c30; --green-bg:#e9f7ee; --amber:#b45309; --amber-bg:#fff7e6;
+    --radius:12px; --shadow:0 2px 10px rgba(0,0,0,.06); --shadow-lg:0 8px 28px rgba(0,0,0,.10);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC","Noto Sans TC",sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.75; font-size:17px;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px;}
+
+  /* Hero */
+  header.hero{
+    background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+    color:#fff; padding:48px 0 40px;
+  }
+  .hero .wrap{display:flex;flex-direction:column;gap:14px;}
+  .hero .badge{
+    align-self:flex-start;background:rgba(255,255,255,.18);
+    padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.5px;
+  }
+  .hero h1{font-size:30px;font-weight:800;line-height:1.3;}
+  .hero p{font-size:16px;opacity:.92;max-width:680px;}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;opacity:.85;margin-top:4px;}
+  .hero a{color:#fff;text-decoration:underline;text-underline-offset:3px;}
+
+  /* Section */
+  section{padding:40px 0;border-bottom:1px solid var(--line);}
+  .sec-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--primary);font-weight:800;font-size:14px;letter-spacing:1px;margin-bottom:6px;
+  }
+  .sec-tag .num{
+    width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+  }
+  h2{font-size:24px;font-weight:800;margin-bottom:6px;line-height:1.35;}
+  .lead{color:var(--muted);margin-bottom:22px;font-size:15.5px;}
+  h3{font-size:18px;font-weight:800;margin:26px 0 10px;color:var(--primary-dark);}
+  p{margin:8px 0;}
+  ul{margin:8px 0 8px 4px;padding-left:20px;}
+  li{margin:5px 0;}
+  strong{color:var(--ink);font-weight:800;}
+  .accent{color:var(--primary);font-weight:800;}
+
+  /* Cards / callouts */
+  .grid{display:grid;gap:14px;}
+  @media(min-width:680px){.grid.cols-3{grid-template-columns:repeat(3,1fr);}}
+  .color-card{
+    background:var(--surface);border-radius:var(--radius);padding:16px 16px 14px;
+    box-shadow:var(--shadow);border-top:4px solid var(--line);
+  }
+  .color-card.blue{border-top-color:var(--blue);}
+  .color-card.pink{border-top-color:var(--pink);}
+  .color-card.red{border-top-color:var(--red);}
+  .color-card .dot{font-weight:800;font-size:15px;margin-bottom:4px;}
+  .color-card.blue .dot{color:var(--blue);}
+  .color-card.pink .dot{color:var(--pink);}
+  .color-card.red .dot{color:var(--red);}
+  .color-card small{color:var(--muted);font-size:13px;display:block;margin-top:6px;line-height:1.6;}
+
+  .note{
+    background:var(--primary-light);border-left:4px solid var(--primary);
+    border-radius:8px;padding:12px 16px;margin:16px 0;font-size:15px;
+  }
+  .warn{
+    background:var(--amber-bg);border-left:4px solid var(--amber);
+    border-radius:8px;padding:12px 16px;margin:16px 0;font-size:15px;color:#7c4a00;
+  }
+  .note strong{color:var(--primary-dark);}
+
+  /* Flow diagram */
+  .flow{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);margin:14px 0;
+  }
+  .flow-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;}
+  .flow-step:not(:last-child){border-bottom:1px dashed var(--line);}
+  .flow-step .k{
+    flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;
+  }
+  .flow-step .k.alt{background:#cdd9e8;color:var(--primary-dark);}
+  .flow-step .b strong{display:block;font-size:15.5px;}
+  .flow-step .b span{color:var(--muted);font-size:14px;}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;background:var(--surface);
+    border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin:14px 0;font-size:15px;}
+  th,td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);}
+  th{background:var(--primary);color:#fff;font-weight:700;font-size:14px;}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:#fafbfd;}
+  td .pill{display:inline-block;background:var(--primary-light);color:var(--primary-dark);
+    font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;}
+
+  /* Mockup cards */
+  .mock-row{display:grid;gap:16px;}
+  @media(min-width:680px){.mock-row{grid-template-columns:1fr 1fr;}}
+  .mock{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;box-shadow:var(--shadow);
+  }
+  .mock .cap{background:var(--primary-dark);color:#fff;font-size:13px;font-weight:700;padding:7px 14px;}
+  .mock .body{padding:14px;}
+  .m-img{aspect-ratio:4/3;background:#eef2f7;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;color:#9aa7b8;font-size:13px;margin-bottom:12px;}
+  .m-name{font-size:17px;font-weight:800;}
+  .m-subrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+  .m-sub{background:var(--primary-light);color:var(--primary-dark);font-size:13px;font-weight:700;
+    padding:2px 8px;border-radius:6px;}
+  .m-model{color:var(--muted);font-size:13px;font-weight:700;}
+  .m-desc{color:var(--ink);font-size:13.5px;margin-top:6px;}
+  .m-tag{display:inline-block;background:var(--primary-light);color:var(--primary-dark);
+    font-size:11px;padding:1px 8px;border-radius:999px;margin-top:8px;}
+  .m-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;}
+  .m-stock{background:var(--green-bg);color:var(--green);font-size:12px;font-weight:700;
+    padding:2px 8px;border-radius:6px;}
+  .m-price{color:var(--green);font-weight:800;font-size:19px;}
+  .spec-list{font-size:13.5px;}
+  .spec-list div{display:flex;padding:7px 10px;}
+  .spec-list div:nth-child(odd){background:#f5f7fa;}
+  .spec-list .lbl{color:var(--muted);width:92px;flex:0 0 auto;}
+
+  /* Roadmap */
+  .road{display:grid;gap:10px;}
+  .road-item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--primary);
+    border-radius:8px;padding:12px 16px;box-shadow:var(--shadow);}
+  .road-item .stage{font-weight:800;color:var(--primary-dark);}
+  .road-item .prd{float:right;font-size:12px;color:var(--muted);background:var(--bg);
+    padding:2px 10px;border-radius:999px;}
+  .road-item small{color:var(--muted);display:block;font-size:14px;}
+
+  .swap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);margin:14px 0;}
+  .swap .line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;font-size:15px;}
+  .swap .from{background:var(--amber-bg);color:#7c4a00;padding:3px 10px;border-radius:6px;font-weight:700;font-size:14px;}
+  .swap .to{background:var(--green-bg);color:var(--green);padding:3px 10px;border-radius:6px;font-weight:700;font-size:14px;}
+  .swap .arrow{color:var(--primary);font-weight:800;}
+
+  /* Promises */
+  .promise{display:grid;gap:12px;}
+  @media(min-width:680px){.promise{grid-template-columns:repeat(3,1fr);}}
+  .promise .p{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .promise .p h4{font-size:15px;color:var(--primary-dark);margin-bottom:6px;}
+  .promise .p small{color:var(--muted);font-size:13.5px;line-height:1.6;}
+
+  footer{padding:30px 0 50px;color:var(--muted);font-size:13.5px;text-align:center;}
+  footer .cta{display:inline-block;background:var(--primary);color:#fff;text-decoration:none;
+    font-weight:700;padding:11px 22px;border-radius:999px;margin-bottom:16px;box-shadow:var(--shadow-lg);}
+
+  @media print{
+    body{background:#fff;font-size:13px;}
+    section{break-inside:avoid;}
+    .hero{background:var(--primary)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">產品設計說明 · 篩選器原型 v0.4</span>
+    <h1>萊廷照明 內部業務查詢系統<br>系統設計說明</h1>
+    <p>讓業務員在客戶現場 30 秒內完成產品查詢與報價，取代「翻紙本型錄 + 打電話回公司」的流程。本文說明搜索邏輯、卡片設計，以及目前 Demo 如何銜接完整系統開發。</p>
+    <div class="meta">
+      <span>📅 2026-05-29</span>
+      <span>🔗 線上 Demo：<a href="https://leonardo101101078-beep.github.io/laitin-search-v2/">leonardo101101078-beep.github.io/laitin-search-v2</a></span>
+    </div>
+  </div>
+</header>
+
+<!-- 一、搜索 -->
+<section>
+  <div class="wrap">
+    <span class="sec-tag"><span class="num">1</span>搜索設計</span>
+    <h2>搜索邏輯如何設計？如何對應原始資料</h2>
+    <p class="lead">把「找產品」拆成兩種互補方式 — 打字即時找 + 條件篩選 — 兩者同時生效、取交集，一邊打字一邊縮小範圍。</p>
+
+    <h3>資料基礎：Excel 三色分層</h3>
+    <p>系統的單一事實來源是產品資料庫 Excel。欄位依角色分成三色，這是整套系統的地基 — <span class="accent">搜索條件與卡片欄位全部由資料自動長出來，不是寫死的</span>。</p>
+    <div class="grid cols-3">
+      <div class="color-card blue">
+        <div class="dot">🔵 藍 · 共通核心</div>
+        三系列都有的欄位
+        <small>系列、主標、副標、簡述、主型號、標籤、零售價<br>→ 搜索與卡片的主幹</small>
+      </div>
+      <div class="color-card pink">
+        <div class="dot">🩷 粉 · 系列獨有</div>
+        每系列各自不同的規格
+        <small>鋁線槽：底/高/燈槽寬<br>燈帶：電壓/功率/防水等級<br>→ 動態生成專屬篩選器</small>
+      </div>
+      <div class="color-card red">
+        <div class="dot">🔴 紅 · 內部定價</div>
+        牌價/批發/工程/優惠/單位
+        <small>本期完全不進系統<br>→ 未來依帳號層級才顯示</small>
+      </div>
+    </div>
+    <div class="note">📦 目前三個系列、抽樣 <strong>53 筆</strong>代表性產品：鋁線槽系列 15、燈帶控制器系列 14、輕智能系列 24。日後 Excel 新增系列或欄位，系統能自動對應。</div>
+
+    <h3>第一種找法 — 一般搜索（打字即時找）</h3>
+    <ul>
+      <li>輸入後 <strong>≤100ms 即時更新</strong>，不必按搜索鍵。</li>
+      <li>比對白名單：<strong>主型號、品項名稱、型號、簡述、標籤、副標</strong>。</li>
+      <li>支援<strong>數值範圍</strong>：輸入「70」會命中規格寫「50~90」的產品。</li>
+    </ul>
+
+    <h3>第二種找法 — 進階搜索（兩段式條件篩選）</h3>
+    <div class="flow">
+      <div class="flow-step"><div class="k">1</div><div class="b"><strong>先選「系列」</strong><span>鋁線槽 / 燈帶控制器 / 輕智能 — 必選</span></div></div>
+      <div class="flow-step"><div class="k alt">2</div><div class="b"><strong>共通篩選（永遠顯示）</strong><span>主標 → 副標 → 標籤 → 零售價區間</span></div></div>
+      <div class="flow-step"><div class="k alt">3</div><div class="b"><strong>系列獨有篩選（選了系列才展開）</strong><span>依該系列規格自動生成欄位</span></div></div>
+    </div>
+    <ul>
+      <li><strong>標籤跟著系列連動</strong>（v0.4 依回饋優化）：選鋁線槽就只剩鋁線槽相關標籤，不再一次冒出 200 多種。</li>
+      <li><strong>同欄位選多項 = 全部都要符合（AND）</strong>：越選越精準。</li>
+      <li><strong>動態顯示</strong>：規格欄位若整系列只有一種值就自動隱藏。</li>
+      <li><strong>下拉筆畫排序</strong>：數字 → 中文（筆畫少到多）→ 英文 A–Z。</li>
+    </ul>
+    <div class="note"><strong>最終顯示 = 一般搜索結果 ∩ 進階搜索結果。</strong> 沒選的條件不約束；選了具體值則空值產品排除。</div>
+    <div class="note">⚡ <strong>搜索完全在使用者瀏覽器內運算，不呼叫任何 AI、不耗任何費用</strong> — 用幾次都不花錢。</div>
+  </div>
+</section>
+
+<!-- 二、卡片 -->
+<section>
+  <div class="wrap">
+    <span class="sec-tag"><span class="num">2</span>卡片設計</span>
+    <h2>卡片頁面如何設計（縮圖 + 詳情）</h2>
+    <p class="lead">分成「列表縮圖卡」與「點開後的詳情 Modal」兩層，v0.4 依試用回饋大幅優化。</p>
+
+    <div class="mock-row">
+      <div class="mock">
+        <div class="cap">列表縮圖卡 — 一眼掃過</div>
+        <div class="body">
+          <div class="m-img">圖片固定 4:3 橫向置中</div>
+          <div class="m-name">天花造型迴光鋁槽</div>
+          <div class="m-subrow"><span class="m-sub">超薄斜角款</span><span class="m-model">HB381A</span></div>
+          <div class="m-desc">均勻發光／搭配批土、木作</div>
+          <div><span class="m-tag">鋁燈槽</span></div>
+          <div class="m-foot"><span class="m-stock">○ 庫存充足</span><span class="m-price">NT$9,997</span></div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="cap">詳情 Modal — 點卡片彈出</div>
+        <div class="body">
+          <div style="font-size:17px;font-weight:800;">天花造型迴光鋁槽</div>
+          <div class="m-subrow" style="margin:6px 0 10px;"><span class="m-sub">超薄斜角款</span><span style="font-size:13px;color:var(--muted)">均勻發光／搭配批土、木作</span></div>
+          <div class="spec-list">
+            <div><span class="lbl">品項名稱</span><span>鋁槽系列003</span></div>
+            <div><span class="lbl">型號</span><span>HB381A</span></div>
+            <div><span class="lbl">底 (mm)</span><span>75</span></div>
+            <div><span class="lbl">材質</span><span>鋁</span></div>
+            <div><span class="lbl">標籤</span><span class="m-tag" style="margin:0">鋁燈槽</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>列表縮圖卡</h3>
+    <ul>
+      <li><strong>圖片固定 4:3 橫向置中</strong>，不裁切變形；空白處淺灰補滿、整排對齊。</li>
+      <li>層級精簡：主標（大字）→ <strong>副標（藍底標籤）＋ 型號</strong>同行 → 簡述 → 標籤。</li>
+      <li><strong>庫存（左）與價格（右）置於卡片底部</strong>，業務一眼看到有沒有貨、多少錢。</li>
+    </ul>
+    <h3>詳情 Modal（背景列表不跑掉）</h3>
+    <ul>
+      <li><strong>上方</strong>：主標 + 副標 + 簡述 + 庫存。</li>
+      <li><strong>中間</strong>：產品大圖，往下滑時圖片黏在頂部持續可見。</li>
+      <li><strong>規格表</strong>：從「品項名稱」起、空白欄位不顯示、隔行深淺底色、標籤排最後。</li>
+      <li><strong>左右切換相鄰產品</strong>：手機滑動、桌面箭頭 / 鍵盤，比價快速。</li>
+      <li><strong>價格預設遮蔽</strong>，點擊才顯示、關閉自動藏回 — 保護報價隱私。</li>
+    </ul>
+    <div class="warn">⚠️ 目前 Demo 的多層價格為<strong>示意用假價</strong>（由零售價推算 5 層級）。真實底價待後端串接後，依登入帳號層級顯示。</div>
+  </div>
+</section>
+
+<!-- 三、Demo → PRD -->
+<section>
+  <div class="wrap">
+    <span class="sec-tag"><span class="num">3</span>後續開發</span>
+    <h2>目前是 Demo，後續如何接上完整 PRD 開發</h2>
+    <p class="lead">目前版本定位是「可驗證的互動原型」：先把體驗與規則確認到位，避免後端做下去才發現方向錯誤。</p>
+
+    <h3>現在 Demo 的樣子（刻意從簡）</h3>
+    <ul>
+      <li>純前端網頁 + 資料直接內嵌 — <strong>無後端、無資料庫、零運算成本</strong>。</li>
+      <li>價格是假的、無登入、無跨裝置同步。</li>
+      <li>好處：改得快、隨時上線給業務試、零成本驗證。</li>
+    </ul>
+
+    <h3>銜接正式系統的路線（對齊 PRD）</h3>
+    <div class="road">
+      <div class="road-item"><span class="prd">F-01／02／03</span><span class="stage">A. 後端地基</span><small>Supabase 資料庫 + 登入 + 三層帳號權限</small></div>
+      <div class="road-item"><span class="prd">定價安全</span><span class="stage">B. 真實定價</span><small>底價由後端依帳號層級返回（內部／一級／二級代理商），絕不在前端過濾</small></div>
+      <div class="road-item"><span class="prd">F-06</span><span class="stage">C. 報價流程</span><small>報價清單加入／數量／小計，跨裝置同步</small></div>
+      <div class="road-item"><span class="prd">F-07／08</span><span class="stage">D. 管理後台</span><small>管理員建立帳號、Excel 批量匯入產品</small></div>
+      <div class="road-item"><span class="prd">F-10~12</span><span class="stage">E. 加值功能</span><small>收藏夾、瀏覽紀錄、圖片輪播</small></div>
+    </div>
+
+    <h3>為什麼 Demo 不會白做</h3>
+    <p>正式版<strong>直接沿用</strong>現在的搜索、卡片、Modal 邏輯，只做兩件替換：</p>
+    <div class="swap">
+      <div class="line"><span class="from">內嵌假資料</span><span class="arrow">→</span><span class="to">向後端要真資料</span></div>
+      <div class="line"><span class="from">示意假價</span><span class="arrow">→</span><span class="to">依帳號層級的真實底價</span></div>
+    </div>
+    <div class="note">這個 Demo 驗證過的互動與規則，<strong>就是正式版的前端骨架</strong>。原型驗證完成後，再正式更新一版 PRD（v0.7）作為後續開發依據。</div>
+  </div>
+</section>
+
+<!-- 附錄：承諾 -->
+<section>
+  <div class="wrap">
+    <span class="sec-tag"><span class="num">★</span>核心承諾</span>
+    <h2>三大安全與效能承諾</h2>
+    <div class="promise">
+      <div class="p"><h4>🔒 定價安全</h4><small>底價一律由後端依帳號層級返回，前端只顯示、不過濾；API 全程驗證 Token。</small></div>
+      <div class="p"><h4>⚡ 搜索效能</h4><small>前端運算，≤100ms 即時更新，零運算費用。</small></div>
+      <div class="p"><h4>📱 現場可用性</h4><small>觸控區 ≥48px、字體 ≥17px、高對比（戶外強光可讀）、手機優先。</small></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="cta" href="https://leonardo101101078-beep.github.io/laitin-search-v2/">開啟線上 Demo 實際操作 →</a>
+    <div>萊廷照明 Laitin Light · 時代照明的先行者 · 內部業務查詢系統 篩選器原型 v0.4（2026-05-29）</div>
+  </div>
+</footer>
+
+</body>
+</html>
