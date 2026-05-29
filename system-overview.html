@@ -170,7 +170,7 @@
 
 <header class="hero">
   <div class="wrap">
-    <span class="badge">產品設計說明 · 篩選器原型 v0.4</span>
+    <span class="badge">產品設計說明 · 篩選器原型 v0.5</span>
     <h1>萊廷照明 內部業務查詢系統<br>系統設計說明</h1>
     <p>讓業務員在客戶現場 30 秒內完成產品查詢與報價，取代「翻紙本型錄 + 打電話回公司」的流程。本文說明搜索邏輯、卡片設計，以及目前 Demo 如何銜接完整系統開發。</p>
     <div class="meta">
@@ -208,6 +208,8 @@
     </div>
     <div class="note">📦 目前三個系列、抽樣 <strong>53 筆</strong>代表性產品：鋁線槽系列 15、燈帶控制器系列 14、輕智能系列 24。日後 Excel 新增系列或欄位，系統能自動對應。</div>
 
+    <div class="note">🔍 <strong>搜索入口（v0.5）</strong>：點右上角放大鏡即可隨時叫出搜索面板 — 內含「一般搜索」與「進階搜索」，不必捲回頁面頂端；整頁只有這一個搜索入口，操作一致。</div>
+
     <h3>第一種找法 — 一般搜索（打字即時找）</h3>
     <ul>
       <li>輸入後 <strong>≤100ms 即時更新</strong>，不必按搜索鍵。</li>
@@ -218,11 +220,11 @@
     <h3>第二種找法 — 進階搜索（兩段式條件篩選）</h3>
     <div class="flow">
       <div class="flow-step"><div class="k">1</div><div class="b"><strong>先選「系列」</strong><span>鋁線槽 / 燈帶控制器 / 輕智能 — 必選</span></div></div>
-      <div class="flow-step"><div class="k alt">2</div><div class="b"><strong>共通篩選（永遠顯示）</strong><span>主標 → 副標 → 標籤 → 零售價區間</span></div></div>
-      <div class="flow-step"><div class="k alt">3</div><div class="b"><strong>系列獨有篩選（選了系列才展開）</strong><span>依該系列規格自動生成欄位</span></div></div>
+      <div class="flow-step"><div class="k alt">2</div><div class="b"><strong>共通篩選</strong><span>主標 → 副標 → 零售價區間（＋全部系列時的「全部標籤」）</span></div></div>
+      <div class="flow-step"><div class="k alt">3</div><div class="b"><strong>系列獨有屬性（選了系列才展開）</strong><span>該系列「標籤」＋ 依規格自動生成的欄位</span></div></div>
     </div>
     <ul>
-      <li><strong>標籤跟著系列連動</strong>（v0.4 依回饋優化）：選鋁線槽就只剩鋁線槽相關標籤，不再一次冒出 200 多種。</li>
+      <li><strong>標籤跟著系列走</strong>（v0.5 依回饋優化）：選了系列，標籤移到「系列獨有屬性」最上方只列該系列標籤；全部系列時在共通區顯示全部 — 不再一次冒出 200 多種。</li>
       <li><strong>同欄位選多項 = 全部都要符合（AND）</strong>：越選越精準。</li>
       <li><strong>動態顯示</strong>：規格欄位若整系列只有一種值就自動隱藏。</li>
       <li><strong>下拉筆畫排序</strong>：數字 → 中文（筆畫少到多）→ 英文 A–Z。</li>
@@ -334,7 +336,7 @@
 <footer>
   <div class="wrap">
     <a class="cta" href="https://leonardo101101078-beep.github.io/laitin-search-v2/">開啟線上 Demo 實際操作 →</a>
-    <div>萊廷照明 Laitin Light · 時代照明的先行者 · 內部業務查詢系統 篩選器原型 v0.4（2026-05-29）</div>
+    <div>萊廷照明 Laitin Light · 時代照明的先行者 · 內部業務查詢系統 篩選器原型 v0.5（2026-05-29）</div>
   </div>
 </footer>
 
